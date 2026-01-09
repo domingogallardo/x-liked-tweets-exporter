@@ -7,6 +7,9 @@ likes page and open each tweet, and it does not use the X API.
 Note: X does not provide an official export for bookmarks. This script exports
 likes (favorites), which many people use as a lightweight bookmark workflow.
 
+This project is extracted from the original docflow project:
+https://github.com/domingogallardo/docflow
+
 ## What it does
 
 - Loads your X likes page
