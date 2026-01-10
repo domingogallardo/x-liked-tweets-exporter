@@ -14,7 +14,7 @@ try:  # pragma: no cover - optional import
     from playwright.sync_api import sync_playwright
 except ImportError as exc:  # pragma: no cover
     raise SystemExit(
-        "playwright is not installed. Run 'pip install playwright' and "
+        "playwright is not installed. Run 'pip install \"playwright>=1.55\"' and "
         "'playwright install chromium'."
     ) from exc
 

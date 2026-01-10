@@ -22,7 +22,7 @@ https://github.com/domingogallardo/docflow
 ## Requirements
 
 - Python 3.10+
-- Playwright + Chromium
+- Playwright >= 1.55 + Chromium
 - markdown (Python package)
 
 ## Quick start
@@ -37,9 +37,10 @@ cd x-liked-tweets-exporter
 2) Install dependencies:
 
 ```bash
-pip install playwright markdown
+pip install "playwright>=1.55" markdown
 playwright install chromium
 ```
+(`expect_response` is required; tested with 1.55+.)
 
 3) Create a logged in storage state (one time):
 

@@ -116,27 +116,15 @@ def _wait_for_tweet_detail(page, timeout_ms: int) -> object | None:
     if timeout_ms <= 0:
         return None
     try:
-        if hasattr(page, "wait_for_response"):
-            response = page.wait_for_response(
-                lambda resp: "TweetDetail" in resp.url,
-                timeout=timeout_ms,
-            )
-        elif hasattr(page, "expect_response"):
-            with page.expect_response(
-                lambda resp: "TweetDetail" in resp.url,
-                timeout=timeout_ms,
-            ) as response_info:
-                response = response_info.value
-        else:
-            response = page.wait_for_event(
-                "response",
-                predicate=lambda resp: "TweetDetail" in resp.url,
-                timeout=timeout_ms,
-            )
+        with page.expect_response(
+            lambda resp: "TweetDetail" in resp.url,
+            timeout=timeout_ms,
+        ) as response_info:
+            pass
     except PlaywrightTimeoutError:
         return None
     try:
-        return response.json()
+        return response_info.value.json()
     except Exception:
         return None
 
@@ -930,7 +918,7 @@ def fetch_tweet_markdown(
 ) -> tuple[str, str]:
     if sync_playwright is None:
         raise RuntimeError(
-            "playwright is not installed. Run 'pip install playwright' and "
+            "playwright is not installed. Run 'pip install \"playwright>=1.55\"' and "
             "'playwright install chromium' to use this tool."
         )
     with sync_playwright() as playwright:
@@ -974,7 +962,7 @@ def fetch_tweet_thread_markdown(
 ) -> tuple[str, str]:
     if sync_playwright is None:
         raise RuntimeError(
-            "playwright is not installed. Run 'pip install playwright' and "
+            "playwright is not installed. Run 'pip install \"playwright>=1.55\"' and "
             "'playwright install chromium' to use this tool."
         )
     with sync_playwright() as playwright:
@@ -1362,7 +1350,7 @@ def fetch_likes_with_state(
         )
 
     if sync_playwright is None:
-        raise RuntimeError("Install playwright to use this tool.")
+        raise RuntimeError("Install 'playwright>=1.55' to use this tool.")
 
     with sync_playwright() as playwright:
         try:
@@ -1406,7 +1394,7 @@ def fetch_like_items_with_state(
         )
 
     if sync_playwright is None:
-        raise RuntimeError("Install playwright to use this tool.")
+        raise RuntimeError("Install 'playwright>=1.55' to use this tool.")
 
     with sync_playwright() as playwright:
         try:
