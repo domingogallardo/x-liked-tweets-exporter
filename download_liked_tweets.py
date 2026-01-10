@@ -33,6 +33,7 @@ DEFAULT_MAX_TWEETS = int(os.environ.get("TWEET_LIKES_MAX", "50"))
 DEFAULT_STATE_PATH = os.environ.get("TWEET_LIKES_STATE", "x_state.json")
 DEFAULT_DEST_DIR = os.environ.get("TWEET_LIKES_DEST", "liked_tweets")
 WAIT_MS = 1000
+TWEET_DETAIL_WAIT_MS = 5000
 
 USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -109,6 +110,35 @@ def _wait_with_log(page, wait_ms: int, reason: str) -> None:
         return
     _log(f"Waiting {_format_wait_ms(wait_ms)} to {reason}...")
     page.wait_for_timeout(wait_ms)
+
+
+def _wait_for_tweet_detail(page, timeout_ms: int) -> object | None:
+    if timeout_ms <= 0:
+        return None
+    try:
+        if hasattr(page, "wait_for_response"):
+            response = page.wait_for_response(
+                lambda resp: "TweetDetail" in resp.url,
+                timeout=timeout_ms,
+            )
+        elif hasattr(page, "expect_response"):
+            with page.expect_response(
+                lambda resp: "TweetDetail" in resp.url,
+                timeout=timeout_ms,
+            ) as response_info:
+                response = response_info.value
+        else:
+            response = page.wait_for_event(
+                "response",
+                predicate=lambda resp: "TweetDetail" in resp.url,
+                timeout=timeout_ms,
+            )
+    except PlaywrightTimeoutError:
+        return None
+    try:
+        return response.json()
+    except Exception:
+        return None
 
 
 def _unique_pair_path(path: Path) -> Path:
@@ -977,6 +1007,10 @@ def fetch_tweet_thread_markdown(
                 return _build_single_tweet_markdown(target_parts, url), filename
 
             thread_payload = tweet_detail.get("payload")
+            if thread_payload is None:
+                thread_payload = _wait_for_tweet_detail(page, TWEET_DETAIL_WAIT_MS)
+                if thread_payload is not None:
+                    tweet_detail["payload"] = thread_payload
             thread_marker = _has_thread_marker(article)
             thread_ids = _extract_thread_ids_from_payload(
                 thread_payload,
