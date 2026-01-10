@@ -1,7 +1,7 @@
 # X Liked Tweets Exporter
 
 This repo contains a single script that downloads your liked tweets and saves
-one Markdown file and one HTML file per tweet. It uses Playwright to read the
+one Markdown file and one HTML file per like. It uses Playwright to read the
 likes page and open each tweet, and it does not use the X API.
 
 Note: X does not provide an official export for bookmarks. This script exports
@@ -14,6 +14,7 @@ https://github.com/domingogallardo/docflow
 
 - Loads your X likes page
 - Collects the newest liked tweet URLs (up to a limit you set)
+- If you like the last post in a thread, the exporter downloads the whole thread into a single file
 - Saves each tweet as:
   - `Tweet - handle-id.md`
   - `Tweet - handle-id.html`
@@ -93,7 +94,6 @@ python download_liked_tweets.py --processed-file /path/to/processed.txt ...
 - `--stop-at-url`      Stop when this URL appears in the likes feed
 - `--processed-file`   Path to the processed URLs file
 - `--no-history`       Disable processed URLs tracking
-- `--wait-ms`          Extra wait time after loading each tweet (default: 5000)
 - `--no-headless`      Run Chromium with UI (useful if login walls appear)
 
 ## Environment variables
@@ -104,7 +104,6 @@ These are optional alternatives to CLI flags:
 - `TWEET_LIKES_STATE`
 - `TWEET_LIKES_DEST`
 - `TWEET_LIKES_MAX`
-- `TWEET_LIKES_WAIT_MS`
 
 ## Notes and troubleshooting
 
