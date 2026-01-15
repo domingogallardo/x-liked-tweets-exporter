@@ -14,7 +14,7 @@ try:  # pragma: no cover - optional import
     from playwright.sync_api import sync_playwright
 except ImportError as exc:  # pragma: no cover
     raise SystemExit(
-        "playwright is not installed. Run 'pip install \"playwright>=1.55\"' and "
+        "playwright is not installed. Run 'pip install playwright' and "
         "'playwright install chromium'."
     ) from exc
 
@@ -32,6 +32,10 @@ window.navigator.permissions.query = (parameters) => (
     : originalQuery(parameters)
 );
 """
+
+
+def _log(message: str) -> None:
+    print(message)
 
 
 def parse_args() -> argparse.Namespace:
@@ -94,6 +98,7 @@ def _launch_browser(playwright, *, headless: bool, channel: str | None):
     except Exception:
         if channel:
             kwargs.pop("channel", None)
+            _log("Could not launch Chrome; trying Chromium instead.")
             return playwright.chromium.launch(**kwargs)
         raise
 
@@ -104,6 +109,7 @@ def main() -> None:
     state_path.parent.mkdir(parents=True, exist_ok=True)
     channel = args.channel.strip() if args.channel else None
 
+    _log("Opening X login...")
     with sync_playwright() as p:
         browser = _launch_browser(p, headless=args.headless, channel=channel)
         context = browser.new_context(user_agent=USER_AGENT)
@@ -115,7 +121,7 @@ def main() -> None:
         context.storage_state(path=str(state_path))
         browser.close()
 
-    print(f"Saved storage_state to {state_path}")
+    _log(f"Saved storage_state to {state_path}")
 
 
 if __name__ == "__main__":
