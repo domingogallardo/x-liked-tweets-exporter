@@ -35,6 +35,35 @@ DEFAULT_DEST_DIR = os.environ.get("TWEET_LIKES_DEST", "liked_tweets")
 WAIT_MS = 1000
 TWEET_DETAIL_WAIT_MS = 5000
 SHOW_MORE_WAIT_MS = 600
+LOGIN_URL_HINTS = ("/login", "/i/flow/login", "/i/flow/signup")
+LOGIN_SELECTORS = (
+    "input[name='text']",
+    "input[type='password']",
+    "[data-testid='loginButton']",
+    "[data-testid='LoginForm_Login_Button']",
+)
+LOGIN_TEXT_HINTS = (
+    "Sign in to X",
+    "Inicia sesion",
+    "Inicia sesión",
+    "Iniciar sesion",
+    "Iniciar sesión",
+)
+UNAVAILABLE_TEXT_HINTS = (
+    "This Post is unavailable",
+    "This post is unavailable",
+    "You're unable to view this Post",
+    "You are unable to view this Post",
+    "This Post is from a suspended account",
+    "This Post is from an account you blocked",
+    "This post was deleted",
+    "Esta publicacion no esta disponible",
+    "Esta publicación no está disponible",
+    "Este post no esta disponible",
+    "Este post no está disponible",
+    "No se puede ver este post",
+    "No puedes ver este post",
+)
 
 USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -128,6 +157,48 @@ def _wait_for_tweet_detail(page, timeout_ms: int) -> object | None:
         return response_info.value.json()
     except Exception:
         return None
+
+
+def _has_any_selector(page, selectors: tuple[str, ...]) -> bool:
+    for selector in selectors:
+        try:
+            if page.locator(selector).count() > 0:
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def _has_any_text(page, texts: tuple[str, ...]) -> bool:
+    for text in texts:
+        try:
+            if page.locator(f"text={text}").count() > 0:
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def _detect_access_issue(page) -> str | None:
+    if page is None:
+        return None
+    try:
+        current_url = page.url or ""
+    except Exception:
+        current_url = ""
+    if current_url and any(fragment in current_url for fragment in LOGIN_URL_HINTS):
+        return "X requires login (login wall)."
+    if _has_any_selector(page, LOGIN_SELECTORS) or _has_any_text(page, LOGIN_TEXT_HINTS):
+        return "X requires login (login wall)."
+    if _has_any_text(page, UNAVAILABLE_TEXT_HINTS):
+        return "Tweet unavailable (deleted, protected, or restricted)."
+    return None
+
+
+def _raise_if_access_issue(page) -> None:
+    issue = _detect_access_issue(page)
+    if issue:
+        raise RuntimeError(issue)
 
 
 def _expand_show_more(article, page, *, wait_ms: int = SHOW_MORE_WAIT_MS) -> None:
@@ -1115,9 +1186,11 @@ def fetch_tweet_markdown(
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=60000)
             _wait_with_log(page, WAIT_MS, "load the tweet")
+            _raise_if_access_issue(page)
 
             article = _locate_tweet_article(page, url)
             if article is None:
+                _raise_if_access_issue(page)
                 raise RuntimeError(
                     "Could not find the post article. It may require login or be unavailable."
                 )
@@ -1165,9 +1238,11 @@ def fetch_tweet_thread_markdown(
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=60000)
             _wait_with_log(page, WAIT_MS, "load the tweet")
+            _raise_if_access_issue(page)
 
             article = _locate_tweet_article(page, url)
             if article is None:
+                _raise_if_access_issue(page)
                 raise RuntimeError(
                     "Could not find the post article. It may require login or be unavailable."
                 )
